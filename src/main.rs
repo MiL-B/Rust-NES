@@ -2,6 +2,9 @@ mod cpu;
 mod memory;
 mod ppu;
 mod apu;
+mod instruction;
+mod rom;
+use rom::load_nes_file;
 
 fn main() {
 	let mut cpu = cpu::Cpu::new();
@@ -9,8 +12,18 @@ fn main() {
 	let mut ppu =ppu::Ppu::new();
 	let mut apu =apu::Apu::new();
 
-	memory.wram[2]=40;
-	ppu.registers[2] = 2;
-	println!("{}", cpu.read_memory(2,&memory,&ppu,&apu));
-	println!("{}", cpu.read_memory(0x2000+2,&memory,&ppu,&apu));
+	let divided_rom;
+	//header,trainer,prg_rom,chr_rom,pc_irom,pc_prom
+
+	match load_nes_file("./rom/sample1.nes"){
+		Ok(v) => divided_rom = v,
+		Err(err) => panic!("{}", err),
+	}
+	println!("{:?}",divided_rom);
+
+	/*
+	loop{
+		cpu.exec(&prg_rom,&chr_rom,&memory,$ppu,$apu)
+	}
+	*/
 }

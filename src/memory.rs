@@ -1,5 +1,5 @@
 pub struct CpuRam {
-  pub wram: Vec<i8>,
+  pub wram: Vec<u8>,
 }
 
 impl CpuRam {

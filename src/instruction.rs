@@ -1,4 +1,4 @@
-mod cpu;
+use super::cpu::Cpu;
 
 enum Opecode {
     ADC,
@@ -60,7 +60,7 @@ enum Opecode {
 }
 
 impl Cpu {
-	fn exec(){
-        }
-	}
+	pub fn exec(&self){
+		println!("exec");
+    }
 }

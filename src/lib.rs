@@ -1,7 +1,10 @@
 mod cpu;
+mod instruction;
 mod memory;
 mod ppu;
 mod apu;
+mod rom;
+use rom::load_nes_file;
 
 #[test]
 fn cpu_init() {
@@ -80,4 +83,18 @@ fn read_cpu_memory() {
     assert_eq!(cpu.read_memory(0x4018,&memory,&ppu,&apu), 1);
     assert_eq!(cpu.read_memory(0x4019,&memory,&ppu,&apu), 2);
     assert_eq!(cpu.read_memory(0x401F,&memory,&ppu,&apu), 3);
+}
+
+#[test]
+fn divide_rom() {
+    let mut divided_rom;
+    match load_nes_file("./rom/sample1.nes"){
+        Ok(v) => divided_rom = v,
+        Err(err) => panic!("{}", err),
+    }
+    assert_eq!(divided_rom.0.len(), 16);
+    assert_eq!(divided_rom.1.len(), 0);
+    assert_eq!(divided_rom.2.len(), 32768);
+    assert_eq!(divided_rom.3.len(), 8192);
+    assert_eq!(divided_rom.4.len(), 0);
 }

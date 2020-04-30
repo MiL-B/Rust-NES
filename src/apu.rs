@@ -1,5 +1,5 @@
 pub struct Apu {
-  pub registers: Vec<i8>,
+  pub registers: Vec<u8>,
 /*
 $4000 	SQ1_VOL 	Duty and volume for square wave 1
 $4001 	SQ1_SWEEP 	Sweep control register for square wave 1
@@ -26,7 +26,7 @@ $4015 	SND_CHN 	Sound channels enable and status
 $4016 	JOY1 	Joystick 1 data (R) and joystick strobe (W)
 $4017 	JOY2 	Joystick 2 data (R) and frame counter control (W)
 $4018-$401F 	APU and I/O functionality that is normally disabled. See CPU Test Mode. */
-  pub registers_test: Vec<i8>,
+  pub registers_test: Vec<u8>,
 }
 
 impl Apu {

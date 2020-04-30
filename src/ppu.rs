@@ -2,7 +2,7 @@ use super::memory;
 use super::cpu;
 
 pub struct Ppu {
-  pub registers: Vec<i8>,
+  pub registers: Vec<u8>,
   /*
   registers[0]:PPUCTRL
   registers[1]:PPUMASK
