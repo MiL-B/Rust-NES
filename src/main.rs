@@ -16,14 +16,9 @@ fn main() {
 	//header,trainer,prg_rom,chr_rom,pc_irom,pc_prom
 
 	match load_nes_file("./rom/sample1.nes"){
-		Ok(v) => divided_rom = v,
+		Ok(v) => divided_rom = rom::Rom::new(v),
 		Err(err) => panic!("{}", err),
 	}
-	println!("{:?}",divided_rom);
-
-	/*
-	loop{
-		cpu.exec(&prg_rom,&chr_rom,&memory,$ppu,$apu)
-	}
-	*/
+	cpu.exec(&divided_rom,&memory,&ppu,&apu);
+	cpu.exec(&divided_rom,&memory,&ppu,&apu);
 }

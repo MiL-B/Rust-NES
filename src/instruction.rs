@@ -1,66 +1,21 @@
+use super::memory;
+use super::ppu;
+use super::apu;
 use super::cpu::Cpu;
+use super::rom;
 
-enum Opecode {
-    ADC,
-	AND,
-	ASL,
-	BCC,
-	BCS,
-	BEQ,
-	BIT,
-	BMI,
-	BNE,
-	BPL,
-	BRK,
-	BVC,
-	BVS,
-	CLC,
-	CLD,
-	CLI,
-	CLV,
-	CMP,
-	CPX,
-	CPY,
-	DEC,
-	DEX,
-	DEY,
-	EOR,
-	INC,
-	INX,
-	INY,
-	JMP,
-	JSR,
-	LDA,
-	LDX,
-	LDY,
-	LSR,
-	NOP,
-	ORA,
-	PHA,
-	PHP,
-	PLA,
-	PLP,
-	ROL,
-	ROR,
-	RTI,
-	RTS,
-	SBC,
-	SEC,
-	SED,
-	SEI,
-	STA,
-	STX,
-	STY,
-	TAX,
-	TAY,
-	TSX,
-	TXA,
-	TXS,
-	TYA
-}
 
 impl Cpu {
-	pub fn exec(&self){
-		println!("exec");
+	pub fn exec(&mut self,divided_rom:&rom::Rom,memory: &memory::CpuRam, ppu: &ppu::Ppu,apu: &apu::Apu){
+		//アドレッシングモードをどうするかは検討中。
+		match divided_rom.prg_rom[self.pc as usize]{
+			0x78 => self.SEI(),
+			_ => println!("{:x} is unimplemented!!", divided_rom.prg_rom[self.pc as usize]),
+		}
+    }
+    fn SEI(&mut self){
+    	println!("SEI");
+    	self.registers[4] = self.registers[4] | 0b0000_0100;
+    	self.pc = self.pc + 1;
     }
 }

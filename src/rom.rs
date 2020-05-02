@@ -2,6 +2,29 @@ use std::io;
 use std::fs::File;
 use std::io::{Read,Error, ErrorKind};
 
+pub struct Rom {
+  pub header: Vec<u8>,
+  pub trainer: Vec<u8>,
+  pub prg_rom: Vec<u8>,
+  pub chr_rom: Vec<u8>,
+  pub pc_irom: Vec<u8>,
+  pub pc_prom: Vec<u8>,
+}
+
+impl Rom {
+    pub fn new(loaded_rom:(Vec<u8>,Vec<u8>,Vec<u8>,Vec<u8>,Vec<u8>,Vec<u8>))->Rom{
+        Rom {
+            header: loaded_rom.0,
+            trainer: loaded_rom.1,
+            prg_rom: loaded_rom.2,
+            chr_rom: loaded_rom.3,
+            pc_irom: loaded_rom.4,
+            pc_prom: loaded_rom.5,
+        }
+    }
+}
+
+
 pub fn load_nes_file(path:&str)->io::Result<(Vec<u8>,Vec<u8>,Vec<u8>,Vec<u8>,Vec<u8>,Vec<u8>)>{
 	let mut file = File::open(path)?;
     let mut header= Vec::new();

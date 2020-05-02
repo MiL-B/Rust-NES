@@ -98,3 +98,26 @@ fn divide_rom() {
     assert_eq!(divided_rom.3.len(), 8192);
     assert_eq!(divided_rom.4.len(), 0);
 }
+
+#[test]
+fn instructions() {
+    let mut cpu = cpu::Cpu::new();
+    let mut memory = memory::CpuRam::new();
+    let mut ppu =ppu::Ppu::new();
+    let mut apu =apu::Apu::new();
+
+    let mut divided_rom;
+    //header,trainer,prg_rom,chr_rom,pc_irom,pc_prom
+
+    match load_nes_file("./rom/sample1.nes"){
+        Ok(v) => divided_rom = rom::Rom::new(v),
+        Err(err) => panic!("{}", err),
+    }
+
+    divided_rom.prg_rom[0] = 0x78;
+    cpu.exec(&divided_rom,&memory,&ppu,&apu);
+    assert_eq!(cpu.registers[4], 0b100100);
+    cpu.pc -= 1;
+    cpu.exec(&divided_rom,&memory,&ppu,&apu);
+    assert_eq!(cpu.registers[4], 0b100100);
+}
