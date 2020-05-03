@@ -120,4 +120,5 @@ fn instructions() {
     cpu.pc -= 1;
     cpu.exec(&divided_rom,&memory,&ppu,&apu);
     assert_eq!(cpu.registers[4], 0b100100);
+    assert_eq!(cpu.pc,1);
 }
