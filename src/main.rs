@@ -1,3 +1,4 @@
+#![allow(warnings)]
 mod cpu;
 mod memory;
 mod ppu;
@@ -19,6 +20,6 @@ fn main() {
 		Ok(v) => divided_rom = rom::Rom::new(v),
 		Err(err) => panic!("{}", err),
 	}
-	cpu.exec(&divided_rom,&memory,&ppu,&apu);
-	cpu.exec(&divided_rom,&memory,&ppu,&apu);
+	cpu.exec(&divided_rom,&mut memory,&mut ppu,&mut apu);
+	cpu.exec(&divided_rom,&mut memory,&mut ppu,&mut apu);
 }

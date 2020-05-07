@@ -1,3 +1,4 @@
+#![allow(warnings)]
 mod cpu;
 mod instruction;
 mod memory;
@@ -12,7 +13,7 @@ fn cpu_init() {
     assert_eq!(cpu.registers[0], 0);
     assert_eq!(cpu.registers[1], 0);
     assert_eq!(cpu.registers[2], 0);
-    assert_eq!(cpu.registers[3], 0);
+    assert_eq!(cpu.registers[3], 0xFD);
     assert_eq!(cpu.registers[4], 32);
     assert_eq!(cpu.pc, 0);
 }
@@ -30,6 +31,11 @@ fn read_cpu_memory() {
 	let mut memory = memory::CpuRam::new();
     let mut ppu =ppu::Ppu::new();
     let mut apu =apu::Apu::new();
+    let mut divided_rom;
+    match load_nes_file("./rom/sample1.nes"){
+        Ok(v) => divided_rom = rom::Rom::new(v),
+        Err(err) => panic!("{}", err),
+    }
 
 
 
@@ -38,10 +44,10 @@ fn read_cpu_memory() {
     memory.wram[3]=3;
     memory.wram[4]=4;
 
-    assert_eq!(cpu.read_memory(1,&memory,&ppu,&apu), 1);
-    assert_eq!(cpu.read_memory(2+0x0800,&memory,&ppu,&apu), 2);
-    assert_eq!(cpu.read_memory(3+0x1000,&memory,&ppu,&apu), 3);
-    assert_eq!(cpu.read_memory(4+0x1800,&memory,&ppu,&apu), 4);
+    assert_eq!(cpu.read_memory(1,&memory,&ppu,&apu,&divided_rom), 1);
+    assert_eq!(cpu.read_memory(2+0x0800,&memory,&ppu,&apu,&divided_rom), 2);
+    assert_eq!(cpu.read_memory(3+0x1000,&memory,&ppu,&apu,&divided_rom), 3);
+    assert_eq!(cpu.read_memory(4+0x1800,&memory,&ppu,&apu,&divided_rom), 4);
 
 
 
@@ -54,15 +60,15 @@ fn read_cpu_memory() {
     ppu.registers[6] = 7;
     ppu.registers[7] = 8;
 
-    assert_eq!(cpu.read_memory(0x2000+0,&memory,&ppu,&apu), 1);
-    assert_eq!(cpu.read_memory(0x2000+1,&memory,&ppu,&apu), 2);
-    assert_eq!(cpu.read_memory(0x2000+2,&memory,&ppu,&apu), 3);
-    assert_eq!(cpu.read_memory(0x2000+3,&memory,&ppu,&apu), 4);
-    assert_eq!(cpu.read_memory(0x2000+4,&memory,&ppu,&apu), 5);
-    assert_eq!(cpu.read_memory(0x2000+5,&memory,&ppu,&apu), 6);
-    assert_eq!(cpu.read_memory(0x2000+6,&memory,&ppu,&apu), 7);
-    assert_eq!(cpu.read_memory(0x2000+7,&memory,&ppu,&apu), 8);
-    assert_eq!(cpu.read_memory(0x2000+8,&memory,&ppu,&apu), 1);
+    assert_eq!(cpu.read_memory(0x2000+0,&memory,&ppu,&apu,&divided_rom), 1);
+    assert_eq!(cpu.read_memory(0x2000+1,&memory,&ppu,&apu,&divided_rom), 2);
+    assert_eq!(cpu.read_memory(0x2000+2,&memory,&ppu,&apu,&divided_rom), 3);
+    assert_eq!(cpu.read_memory(0x2000+3,&memory,&ppu,&apu,&divided_rom), 4);
+    assert_eq!(cpu.read_memory(0x2000+4,&memory,&ppu,&apu,&divided_rom), 5);
+    assert_eq!(cpu.read_memory(0x2000+5,&memory,&ppu,&apu,&divided_rom), 6);
+    assert_eq!(cpu.read_memory(0x2000+6,&memory,&ppu,&apu,&divided_rom), 7);
+    assert_eq!(cpu.read_memory(0x2000+7,&memory,&ppu,&apu,&divided_rom), 8);
+    assert_eq!(cpu.read_memory(0x2000+8,&memory,&ppu,&apu,&divided_rom), 1);
 
 
 
@@ -70,9 +76,9 @@ fn read_cpu_memory() {
     apu.registers[1]=2;
     apu.registers[23]=3;
 
-    assert_eq!(cpu.read_memory(0x4000+0,&memory,&ppu,&apu), 1);
-    assert_eq!(cpu.read_memory(0x4000+1,&memory,&ppu,&apu), 2);
-    assert_eq!(cpu.read_memory(0x4000+23,&memory,&ppu,&apu), 3);
+    assert_eq!(cpu.read_memory(0x4000+0,&memory,&ppu,&apu,&divided_rom), 1);
+    assert_eq!(cpu.read_memory(0x4000+1,&memory,&ppu,&apu,&divided_rom), 2);
+    assert_eq!(cpu.read_memory(0x4000+23,&memory,&ppu,&apu,&divided_rom), 3);
 
 
 
@@ -80,27 +86,44 @@ fn read_cpu_memory() {
     apu.registers_test[1]=2;
     apu.registers_test[7]=3;
 
-    assert_eq!(cpu.read_memory(0x4018,&memory,&ppu,&apu), 1);
-    assert_eq!(cpu.read_memory(0x4019,&memory,&ppu,&apu), 2);
-    assert_eq!(cpu.read_memory(0x401F,&memory,&ppu,&apu), 3);
+    assert_eq!(cpu.read_memory(0x4018,&memory,&ppu,&apu,&divided_rom), 1);
+    assert_eq!(cpu.read_memory(0x4019,&memory,&ppu,&apu,&divided_rom), 2);
+    assert_eq!(cpu.read_memory(0x401F,&memory,&ppu,&apu,&divided_rom), 3);
+
+    assert_eq!(cpu.read_memory(0x8000,&memory,&ppu,&apu,&divided_rom), 0x78);
 }
 
 #[test]
 fn divide_rom() {
     let mut divided_rom;
     match load_nes_file("./rom/sample1.nes"){
-        Ok(v) => divided_rom = v,
+        Ok(v) => divided_rom = rom::Rom::new(v),
         Err(err) => panic!("{}", err),
     }
-    assert_eq!(divided_rom.0.len(), 16);
-    assert_eq!(divided_rom.1.len(), 0);
-    assert_eq!(divided_rom.2.len(), 32768);
-    assert_eq!(divided_rom.3.len(), 8192);
-    assert_eq!(divided_rom.4.len(), 0);
+    assert_eq!(divided_rom.header.len(), 16);
+    assert_eq!(divided_rom.trainer.len(), 0);
+    assert_eq!(divided_rom.prg_rom.len(), 32768);
+    assert_eq!(divided_rom.chr_rom.len(), 8192);
+    assert_eq!(divided_rom.pc_irom.len(), 0);
+    assert_eq!(divided_rom.pc_prom.len(), 0);
 }
 
 #[test]
 fn instructions() {
+    /*
+    [120, 162, 255, 154, 169, 0, 141, 0, 32, 141, 1, 32, 
+    169, 63, 141, 6, 32, 169, 0, 141, 6, 32, 
+    162, 0, 160, 16, 189, 81, 128, 141, 7, 32,
+    232, 136, 208, 246, 169, 33, 141, 6, 32, 169,
+    201, 141, 6, 32, 162, 0, 160, 13, 189, 97, 
+    128, 141, 7, 32, 232, 136, 208, 246, 169, 0, 
+    141, 5, 32, 141, 5, 32, 169, 8, 141, 0, 
+    32, 169, 30, 141, 1, 32, 76, 78, 128, 15, 
+    0, 16, 32, 15, 6, 22, 38, 15, 8, 24, 
+    40, 15, 10, 26, 42, 72, 69, 76, 76, 79,
+    44, 32, 87, 79, 82, 76, 68, 33,
+    ......  128, 0, 0]
+    */
     let mut cpu = cpu::Cpu::new();
     let mut memory = memory::CpuRam::new();
     let mut ppu =ppu::Ppu::new();
@@ -115,10 +138,39 @@ fn instructions() {
     }
 
     divided_rom.prg_rom[0] = 0x78;
-    cpu.exec(&divided_rom,&memory,&ppu,&apu);
+    cpu.exec(&divided_rom,&mut memory,&mut ppu,&mut apu);
     assert_eq!(cpu.registers[4], 0b100100);
-    cpu.pc -= 1;
-    cpu.exec(&divided_rom,&memory,&ppu,&apu);
+    cpu.pc = 0;
+    cpu.exec(&divided_rom,&mut memory,&mut ppu,&mut apu);
     assert_eq!(cpu.registers[4], 0b100100);
     assert_eq!(cpu.pc,1);
+
+    cpu.pc = 0;
+    divided_rom.prg_rom[0] = 0x00;
+    cpu.exec(&divided_rom,&mut memory,&mut ppu,&mut apu);
+    assert_eq!(cpu.pc,0);
+    assert_eq!((cpu.registers[4] >> 4) & 1u8,1);
+
+    println!("{:?}",divided_rom.prg_rom);
+    cpu.pc = 0;
+    cpu.registers[1] = 4;
+    memory.wram[166] = 0x01;
+    memory.wram[167] = 0x80;
+    divided_rom.prg_rom[0] = 0x01;
+    cpu.exec(&divided_rom,&mut memory,&mut ppu,&mut apu);
+    assert_eq!(cpu.registers[0],162);
+    assert_eq!((cpu.registers[4] >> 1) & 1u8,0);
+    assert_eq!((cpu.registers[4] >> 7) & 1u8,1);
+}
+
+#[test]
+fn push_pop() {
+    let mut cpu = cpu::Cpu::new();
+    let mut memory = memory::CpuRam::new();
+
+    cpu.stack_push(&mut memory,1);
+    assert_eq!(memory.wram[0x01FD], 1);
+    assert_eq!(cpu.registers[3],0xFC);
+    assert_eq!(cpu.stack_pop(&memory),1);
+    assert_eq!(cpu.registers[3],0xFD);
 }
