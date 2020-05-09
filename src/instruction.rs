@@ -27,6 +27,9 @@ impl Addressing{
 			Addressing::Indirect_X => cpu.read_memory(memory.wram[rom.prg_rom[(cpu.pc - 1) as usize].wrapping_add(cpu.registers[1]) as usize] as u16 
 											+ 256 * (memory.wram[rom.prg_rom[(cpu.pc - 1) as usize].wrapping_add(cpu.registers[1]).wrapping_add(1) as usize]) as u16,memory,ppu,apu,rom),
 			Addressing::Zeropage => memory.wram[rom.prg_rom[(cpu.pc - 1) as usize] as usize],
+			Addressing::Immediate => rom.prg_rom[(cpu.pc - 1) as usize],
+			Addressing::Accumulator => cpu.registers[0],
+			Addressing::Absolute => cpu.read_memory((rom.prg_rom[(cpu.pc - 2) as usize] as u16) + 256 * (rom.prg_rom[(cpu.pc - 1) as usize] as u16),memory,ppu,apu,rom),
 			_ => 0,
 		}
 	}
@@ -37,6 +40,9 @@ impl Addressing{
 			Addressing::Indirect_X => cpu.write_memory(memory.wram[rom.prg_rom[(cpu.pc - 1) as usize].wrapping_add(cpu.registers[1]) as usize] as u16 
 											+ 256 * (memory.wram[rom.prg_rom[(cpu.pc - 1) as usize].wrapping_add(cpu.registers[1]).wrapping_add(1) as usize]) as u16,memory,ppu,apu,value),
 			Addressing::Zeropage => memory.wram[rom.prg_rom[(cpu.pc - 1) as usize] as usize] = value,
+			Addressing::Immediate => panic!("Immediate value is not writable!"),
+			Addressing::Accumulator => cpu.registers[0] = value,
+			Addressing::Absolute => cpu.write_memory((rom.prg_rom[(cpu.pc - 2) as usize] as u16) + 256 * (rom.prg_rom[(cpu.pc - 1) as usize] as u16),memory,ppu,apu,value),
 			_ => println!("writing value is unimplemented"),
 		}
 	}
@@ -46,6 +52,9 @@ impl Addressing{
 			Addressing::Implied => 1,
 			Addressing::Indirect_X => 2,
 			Addressing::Zeropage => 2,
+			Addressing::Immediate => 2,
+			Addressing::Accumulator => 1,
+			Addressing::Absolute => 3,
 			_ => 0,
 		}
 	}
@@ -60,6 +69,11 @@ impl Cpu {
 			0x01 => self.ORA(6,Addressing::Indirect_X,memory,ppu,apu,divided_rom),
 			0x05 => self.ORA(3,Addressing::Zeropage,memory,ppu,apu,divided_rom),
 			0x06 => self.ASL(5,Addressing::Zeropage,memory,ppu,apu,divided_rom),
+			0x07 => self.PHP(3,Addressing::Implied,memory,ppu,apu,divided_rom),
+			0x09 => self.ORA(2,Addressing::Immediate,memory,ppu,apu,divided_rom),
+			0x0A => self.ASL(2,Addressing::Accumulator,memory,ppu,apu,divided_rom),
+			0x0D => self.ORA(4,Addressing::Absolute,memory,ppu,apu,divided_rom),
+			0x0E => self.ASL(6,Addressing::Absolute,memory,ppu,apu,divided_rom),
 			_ => println!("{:x} is unimplemented!!", divided_rom.prg_rom[self.pc as usize]),
 		}
     }
@@ -106,11 +120,18 @@ impl Cpu {
     	self.SetStatusByResult(addressing.read_value(&self,memory,ppu,apu,rom));
     	self.cycle = self.cycle + cycle;
     }
+    fn PHP(&mut self,cycle:usize,addressing:Addressing,memory: &mut memory::CpuRam, ppu: &ppu::Ppu,apu: &apu::Apu,rom: &rom::Rom){
+    	println!("PHP");
+    	self.pc = self.pc + addressing.bytes();
+    	self.stack_push(memory,self.registers[4]);
+    	self.cycle = self.cycle + cycle;
+    }
 
 
     fn OPCODE(&mut self,cycle:usize,addressing:Addressing,memory: &memory::CpuRam, ppu: &ppu::Ppu,apu: &apu::Apu,rom: &rom::Rom){
     	println!("OPCODE");
     	self.pc = self.pc + addressing.bytes();
+    	self.SetStatusByResult(addressing.read_value(&self,memory,ppu,apu,rom));
     	self.cycle = self.cycle + cycle;
     }
 }

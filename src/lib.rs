@@ -147,25 +147,26 @@ fn instructions() {
     assert_eq!(cpu.pc,1);
 
     //0x00
-    let mut cpu = cpu::Cpu::new();
+    cpu = cpu::Cpu::new();
     divided_rom.prg_rom[0] = 0x00;
     cpu.exec(&divided_rom,&mut memory,&mut ppu,&mut apu);
     assert_eq!(cpu.pc,0);
     assert_eq!((cpu.registers[4] >> 4) & 1u8,1);
 
     //0x01
-    let mut cpu = cpu::Cpu::new();
+    cpu = cpu::Cpu::new();
     cpu.registers[1] = 4;
     memory.wram[166] = 0x01;
     memory.wram[167] = 0x80;
     divided_rom.prg_rom[0] = 0x01;
+    divided_rom.prg_rom[1] = 0xA2;
     cpu.exec(&divided_rom,&mut memory,&mut ppu,&mut apu);
     assert_eq!(cpu.registers[0],162);
     assert_eq!((cpu.registers[4] >> 1) & 1u8,0);
     assert_eq!((cpu.registers[4] >> 7) & 1u8,1);
 
     //0x05
-    let mut cpu = cpu::Cpu::new();
+    cpu = cpu::Cpu::new();
     memory.wram[167] = 0x83;
     cpu.registers[0] = 8;
     divided_rom.prg_rom[0] = 0x05;
@@ -176,7 +177,7 @@ fn instructions() {
     assert_eq!((cpu.registers[4] >> 7) & 1u8,1);
 
     //0x06
-    let mut cpu = cpu::Cpu::new();
+    cpu = cpu::Cpu::new();
     memory.wram[167] = 0x40;
     divided_rom.prg_rom[0] = 0x06;
     divided_rom.prg_rom[1] = 0xA7;
@@ -191,7 +192,68 @@ fn instructions() {
     assert_eq!((cpu.registers[4] >> 0) & 1u8,1);
     assert_eq!((cpu.registers[4] >> 1) & 1u8,1);
     assert_eq!((cpu.registers[4] >> 7) & 1u8,0);
+
+    //0x07
+    cpu = cpu::Cpu::new();
+    divided_rom.prg_rom[0] = 0x07;
+    cpu.exec(&divided_rom,&mut memory,&mut ppu,&mut apu);
+    assert_eq!(memory.wram[0x01FD],0b0010_0000);
+
+    //0x09
+    cpu = cpu::Cpu::new();
+    divided_rom.prg_rom[0] = 0x09;
+    divided_rom.prg_rom[1] = 0b1000_1000;
+    cpu.exec(&divided_rom,&mut memory,&mut ppu,&mut apu);
+    assert_eq!(cpu.registers[0],0b1000_1000);
+    assert_eq!((cpu.registers[4] >> 1) & 1u8,0);
+    assert_eq!((cpu.registers[4] >> 7) & 1u8,1);
+
+    //0x0A
+    cpu = cpu::Cpu::new();
+    cpu.registers[0] = 0x40;
+    divided_rom.prg_rom[0] = 0x0A;
+    cpu.exec(&divided_rom,&mut memory,&mut ppu,&mut apu);
+    assert_eq!(cpu.registers[0],128);
+    assert_eq!((cpu.registers[4] >> 0) & 1u8,0);
+    assert_eq!((cpu.registers[4] >> 1) & 1u8,0);
+    assert_eq!((cpu.registers[4] >> 7) & 1u8,1);
+    cpu.pc = 0;
+    cpu.exec(&divided_rom,&mut memory,&mut ppu,&mut apu);
+    assert_eq!(cpu.registers[0],0);
+    assert_eq!((cpu.registers[4] >> 0) & 1u8,1);
+    assert_eq!((cpu.registers[4] >> 1) & 1u8,1);
+    assert_eq!((cpu.registers[4] >> 7) & 1u8,0);
+
+    //0x0D
+    cpu = cpu::Cpu::new();
+    memory.wram[0x0701] = 0b1000_1000;
+    divided_rom.prg_rom[0] = 0x0D;
+    divided_rom.prg_rom[1] = 0x01;
+    divided_rom.prg_rom[2] = 0x07;
+    cpu.exec(&divided_rom,&mut memory,&mut ppu,&mut apu);
+    assert_eq!(cpu.registers[0],0b1000_1000);
+    assert_eq!((cpu.registers[4] >> 1) & 1u8,0);
+    assert_eq!((cpu.registers[4] >> 7) & 1u8,1);
+
+    //0x0A
+    cpu = cpu::Cpu::new();
+    memory.wram[0x0701] = 0b0100_0000;
+    divided_rom.prg_rom[0] = 0x0E;
+    divided_rom.prg_rom[1] = 0x01;
+    divided_rom.prg_rom[2] = 0x07;
+    cpu.exec(&divided_rom,&mut memory,&mut ppu,&mut apu);
+    assert_eq!(memory.wram[0x0701],128);
+    assert_eq!((cpu.registers[4] >> 0) & 1u8,0);
+    assert_eq!((cpu.registers[4] >> 1) & 1u8,0);
+    assert_eq!((cpu.registers[4] >> 7) & 1u8,1);
+    cpu.pc = 0;
+    cpu.exec(&divided_rom,&mut memory,&mut ppu,&mut apu);
+    assert_eq!(memory.wram[0x0701],0);
+    assert_eq!((cpu.registers[4] >> 0) & 1u8,1);
+    assert_eq!((cpu.registers[4] >> 1) & 1u8,1);
+    assert_eq!((cpu.registers[4] >> 7) & 1u8,0);
 }
+
 
 #[test]
 fn push_pop() {
