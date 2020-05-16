@@ -31,7 +31,7 @@ impl Cpu {
         }
 	}
 	pub fn read_memory(&self, address: u16,memory: &memory::CpuRam, ppu: &ppu::Ppu,apu: &apu::Apu,rom: &rom::Rom) -> u8{
-		println!("{:?}",address );
+		println!("{:?}",address);
 		if address < 0x2000 {
 			return memory.wram[(address % 0x0800) as usize];
 		}

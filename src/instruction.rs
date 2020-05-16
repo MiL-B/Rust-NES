@@ -30,7 +30,13 @@ impl Addressing{
 			Addressing::Immediate => rom.prg_rom[(cpu.pc - 1) as usize],
 			Addressing::Accumulator => cpu.registers[0],
 			Addressing::Absolute => cpu.read_memory((rom.prg_rom[(cpu.pc - 2) as usize] as u16) + 256 * (rom.prg_rom[(cpu.pc - 1) as usize] as u16),memory,ppu,apu,rom),
-			_ => 0,
+			Addressing::Relative => panic!("Addressing mode Relative is not for indicating value."),
+			Addressing::Indirect_Y => cpu.read_memory(memory.wram[rom.prg_rom[(cpu.pc - 1) as usize] as usize] as u16 
+											+ 256 * memory.wram[rom.prg_rom[(cpu.pc - 1) as usize].wrapping_add(1) as usize] as u16 + cpu.registers[2] as u16,memory,ppu,apu,rom),
+			Addressing::Zeropage_X => memory.wram[rom.prg_rom[(cpu.pc - 1) as usize].wrapping_add(cpu.registers[1]) as usize],
+			Addressing::Absolute_X => cpu.read_memory((rom.prg_rom[(cpu.pc - 2) as usize] as u16) + 256 * (rom.prg_rom[(cpu.pc - 1) as usize] as u16) + cpu.registers[1] as u16,memory,ppu,apu,rom),
+			Addressing::Absolute_Y => cpu.read_memory((rom.prg_rom[(cpu.pc - 2) as usize] as u16) + 256 * (rom.prg_rom[(cpu.pc - 1) as usize] as u16) + cpu.registers[2] as u16,memory,ppu,apu,rom),
+			_ => panic!("unimplemented"),
 		}
 	}
 
@@ -43,6 +49,12 @@ impl Addressing{
 			Addressing::Immediate => panic!("Immediate value is not writable!"),
 			Addressing::Accumulator => cpu.registers[0] = value,
 			Addressing::Absolute => cpu.write_memory((rom.prg_rom[(cpu.pc - 2) as usize] as u16) + 256 * (rom.prg_rom[(cpu.pc - 1) as usize] as u16),memory,ppu,apu,value),
+			Addressing::Relative => panic!("Addressing mode Relative is not for indicating value."),
+			Addressing::Indirect_Y => cpu.write_memory(memory.wram[rom.prg_rom[(cpu.pc - 1) as usize] as usize] as u16 
+											+ 256 * (memory.wram[rom.prg_rom[(cpu.pc - 1) as usize].wrapping_add(1) as usize]) as u16 + cpu.registers[2] as u16,memory,ppu,apu,value),
+			Addressing::Zeropage_X => memory.wram[rom.prg_rom[(cpu.pc - 1) as usize].wrapping_add(cpu.registers[1]) as usize] = value,
+			Addressing::Absolute_X => cpu.write_memory((rom.prg_rom[(cpu.pc - 2) as usize] as u16) + 256 * (rom.prg_rom[(cpu.pc - 1) as usize] as u16) + cpu.registers[1] as u16,memory,ppu,apu,value),
+			Addressing::Absolute_Y => cpu.write_memory((rom.prg_rom[(cpu.pc - 2) as usize] as u16) + 256 * (rom.prg_rom[(cpu.pc - 1) as usize] as u16) + cpu.registers[2] as u16,memory,ppu,apu,value),
 			_ => println!("writing value is unimplemented"),
 		}
 	}
@@ -55,6 +67,19 @@ impl Addressing{
 			Addressing::Immediate => 2,
 			Addressing::Accumulator => 1,
 			Addressing::Absolute => 3,
+			Addressing::Relative => 2,
+			Addressing::Indirect_Y => 2,
+			Addressing::Zeropage_X => 2,
+			Addressing::Absolute_X => 3,
+			Addressing::Absolute_Y => 3,
+			_ => 0,
+		}
+	}
+	pub fn extra_cycle(&self,cpu:&Cpu, memory:&memory::CpuRam,rom:&rom::Rom)->usize{
+		match self{
+			Addressing::Indirect_Y if  memory.wram[rom.prg_rom[(cpu.pc - 1) as usize] as usize].overflowing_add(cpu.registers[2]).1 => 1,
+			Addressing::Absolute_X if  rom.prg_rom[(cpu.pc - 2) as usize].overflowing_add(cpu.registers[1]).1 => 1,
+			Addressing::Absolute_Y if  rom.prg_rom[(cpu.pc - 2) as usize].overflowing_add(cpu.registers[2]).1 => 1,
 			_ => 0,
 		}
 	}
@@ -69,11 +94,19 @@ impl Cpu {
 			0x01 => self.ORA(6,Addressing::Indirect_X,memory,ppu,apu,divided_rom),
 			0x05 => self.ORA(3,Addressing::Zeropage,memory,ppu,apu,divided_rom),
 			0x06 => self.ASL(5,Addressing::Zeropage,memory,ppu,apu,divided_rom),
-			0x07 => self.PHP(3,Addressing::Implied,memory,ppu,apu,divided_rom),
+			0x08 => self.PHP(3,Addressing::Implied,memory,ppu,apu,divided_rom),
 			0x09 => self.ORA(2,Addressing::Immediate,memory,ppu,apu,divided_rom),
 			0x0A => self.ASL(2,Addressing::Accumulator,memory,ppu,apu,divided_rom),
 			0x0D => self.ORA(4,Addressing::Absolute,memory,ppu,apu,divided_rom),
 			0x0E => self.ASL(6,Addressing::Absolute,memory,ppu,apu,divided_rom),
+			0x10 => self.BPL(2,Addressing::Relative,memory,ppu,apu,divided_rom),
+			0x11 => self.ORA(5,Addressing::Indirect_Y,memory,ppu,apu,divided_rom),
+			0x15 => self.ORA(4,Addressing::Zeropage_X,memory,ppu,apu,divided_rom),
+			0x16 => self.ASL(6,Addressing::Zeropage_X,memory,ppu,apu,divided_rom),
+			0x18 => self.CLC(2,Addressing::Implied,memory,ppu,apu,divided_rom),
+			0x19 => self.ORA(4,Addressing::Absolute_Y,memory,ppu,apu,divided_rom),
+			0x1D => self.ORA(4,Addressing::Absolute_X,memory,ppu,apu,divided_rom),
+			0x1E => self.ASL(7,Addressing::Absolute_X,memory,ppu,apu,divided_rom),
 			_ => println!("{:x} is unimplemented!!", divided_rom.prg_rom[self.pc as usize]),
 		}
     }
@@ -109,7 +142,7 @@ impl Cpu {
     	self.registers[0] = self.registers[0] | addressing.read_value(&self,memory,ppu,apu,rom);
     	
     	self.SetStatusByResult(self.registers[0]);
-    	self.cycle = self.cycle + cycle;
+    	self.cycle = self.cycle + cycle + addressing.extra_cycle(self,memory,rom);
     }
     fn ASL(&mut self,cycle:usize,addressing:Addressing,memory: &mut memory::CpuRam, ppu: &mut ppu::Ppu,apu: &mut apu::Apu,rom: &rom::Rom){
     	println!("ASL");
@@ -126,6 +159,30 @@ impl Cpu {
     	self.stack_push(memory,self.registers[4]);
     	self.cycle = self.cycle + cycle;
     }
+    fn BPL(&mut self,cycle:usize,addressing:Addressing,memory: &memory::CpuRam, ppu: &ppu::Ppu,apu: &apu::Apu,rom: &rom::Rom){
+    	println!("BPL");
+    	self.pc = self.pc + addressing.bytes();
+    	if (self.registers[4] >> 7) & 1u8 == 0{
+    		self.cycle = self.cycle + 1;
+    		let upper_address = (self.pc >> 8) as u8;
+    		if (rom.prg_rom[(self.pc - 1) as usize] >> 7) & 1u8 == 0{
+    			self.pc = self.pc + rom.prg_rom[(self.pc - 1) as usize] as u16;
+    		}else {
+    			self.pc = self.pc - (!rom.prg_rom[(self.pc - 1) as usize] as u16 + 1);
+    		}
+    		if upper_address != (self.pc >> 8) as u8{
+    			self.cycle = self.cycle + 1;
+    		}
+    	}
+    	self.cycle = self.cycle + cycle;
+    }
+    fn CLC(&mut self,cycle:usize,addressing:Addressing,memory: &memory::CpuRam, ppu: &ppu::Ppu,apu: &apu::Apu,rom: &rom::Rom){
+    	println!("CLC");
+    	self.pc = self.pc + addressing.bytes();
+    	self.registers[4] = self.registers[4] & 0b1111_1110;
+    	self.cycle = self.cycle + cycle;
+    }
+
 
 
     fn OPCODE(&mut self,cycle:usize,addressing:Addressing,memory: &memory::CpuRam, ppu: &ppu::Ppu,apu: &apu::Apu,rom: &rom::Rom){
