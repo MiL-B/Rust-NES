@@ -441,6 +441,72 @@ fn instructions() {
     assert_eq!((cpu.registers[4] >> 1) & 1u8,1);
     assert_eq!((cpu.registers[4] >> 7) & 1u8,0);
 
+    //0x20
+    cpu = cpu::Cpu::new();
+    divided_rom.prg_rom[0] = 0x20;
+    divided_rom.prg_rom[1] = 0x01;
+    divided_rom.prg_rom[2] = 0x07;
+    cpu.exec(&divided_rom,&mut memory,&mut ppu,&mut apu);
+    assert_eq!(cpu.pc,0x701);
+    assert_eq!(memory.wram[0x01FD], 0x0000);
+    assert_eq!(memory.wram[0x01FC], 0x0002);
+    assert_eq!(cpu.cycle,6);
+
+    //0x21
+    cpu = cpu::Cpu::new();
+    cpu.registers[1] = 4;
+    memory.wram[166] = 0x01;
+    memory.wram[167] = 0x80;
+    divided_rom.prg_rom[0] = 0x21;
+    divided_rom.prg_rom[1] = 0xA2;
+    cpu.registers[0] = 0b1000_0001;
+    cpu.exec(&divided_rom,&mut memory,&mut ppu,&mut apu);
+    assert_eq!(cpu.registers[0],128);
+    assert_eq!((cpu.registers[4] >> 1) & 1u8,0);
+    assert_eq!((cpu.registers[4] >> 7) & 1u8,1);
+    assert_eq!(cpu.cycle,6);
+
+    //0x24
+    cpu = cpu::Cpu::new();
+    memory.wram[167] = 0b0100_0010;
+    cpu.registers[0] = 0b1000_0001;
+    divided_rom.prg_rom[0] = 0x24;
+    divided_rom.prg_rom[1] = 0xA7;
+    cpu.exec(&divided_rom,&mut memory,&mut ppu,&mut apu);
+    assert_eq!((cpu.registers[4] >> 7) & 1u8,0);
+    assert_eq!((cpu.registers[4] >> 6) & 1u8,1);
+    assert_eq!((cpu.registers[4] >> 1) & 1u8,1);
+    assert_eq!(cpu.cycle,3);
+
+    //0x25
+    cpu = cpu::Cpu::new();
+    memory.wram[167] = 0b1010_1010;
+    cpu.registers[0] = 0b0000_1000;
+    divided_rom.prg_rom[0] = 0x25;
+    divided_rom.prg_rom[1] = 0xA7;
+    cpu.exec(&divided_rom,&mut memory,&mut ppu,&mut apu);
+    assert_eq!(cpu.registers[0],0b0000_1000);
+    assert_eq!((cpu.registers[4] >> 1) & 1u8,0);
+    assert_eq!((cpu.registers[4] >> 7) & 1u8,0);
+    assert_eq!(cpu.cycle,3);
+
+    //0x26
+    cpu = cpu::Cpu::new();
+    memory.wram[167] = 0b1010_1010;
+    divided_rom.prg_rom[0] = 0x26;
+    divided_rom.prg_rom[1] = 0xA7;
+    cpu.exec(&divided_rom,&mut memory,&mut ppu,&mut apu);
+    assert_eq!(memory.wram[167],0b0101_0101);
+    assert_eq!((cpu.registers[4] >> 0) & 1u8,1);
+    assert_eq!((cpu.registers[4] >> 1) & 1u8,0);
+    assert_eq!((cpu.registers[4] >> 7) & 1u8,0);
+    assert_eq!(cpu.cycle,5);
+
+    //0x27
+    
+    
+
+
 }
 
 

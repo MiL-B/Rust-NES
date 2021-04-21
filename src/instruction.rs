@@ -107,6 +107,11 @@ impl Cpu {
 			0x19 => self.ORA(4,Addressing::Absolute_Y,memory,ppu,apu,divided_rom),
 			0x1D => self.ORA(4,Addressing::Absolute_X,memory,ppu,apu,divided_rom),
 			0x1E => self.ASL(7,Addressing::Absolute_X,memory,ppu,apu,divided_rom),
+			0x20 => self.JSR(6,Addressing::Absolute,memory,ppu,apu,divided_rom),
+			0x21 => self.AND(6,Addressing::Indirect_X,memory,ppu,apu,divided_rom),
+			0x24 => self.BIT(3,Addressing::Zeropage,memory,ppu,apu,divided_rom),
+			0x25 => self.AND(3,Addressing::Zeropage,memory,ppu,apu,divided_rom),
+			0x26 => self.ROL(5,Addressing::Zeropage,memory,ppu,apu,divided_rom),
 			_ => println!("{:x} is unimplemented!!", divided_rom.prg_rom[self.pc as usize]),
 		}
     }
@@ -182,7 +187,36 @@ impl Cpu {
     	self.registers[4] = self.registers[4] & 0b1111_1110;
     	self.cycle = self.cycle + cycle;
     }
-
+    fn JSR(&mut self,cycle:usize,addressing:Addressing,memory: &mut memory::CpuRam, ppu: &ppu::Ppu,apu: &apu::Apu,rom: &rom::Rom){
+    	println!("JSR");
+    	self.pc = self.pc + addressing.bytes();
+    	self.stack_push(memory,((self.pc - 1) >> 8) as u8);
+    	self.stack_push(memory,((self.pc -1) % 256) as u8);
+    	self.pc = (rom.prg_rom[(self.pc - 2) as usize] as u16) + 256 * (rom.prg_rom[(self.pc - 1) as usize] as u16);
+    	self.cycle = self.cycle + cycle;
+    }
+    fn AND(&mut self,cycle:usize,addressing:Addressing,memory: &memory::CpuRam, ppu: &ppu::Ppu,apu: &apu::Apu,rom: &rom::Rom){
+    	self.pc = self.pc + addressing.bytes();
+    	self.registers[0] = self.registers[0] & addressing.read_value(&self,memory,ppu,apu,rom);
+    	
+    	self.SetStatusByResult(self.registers[0]);
+    	self.cycle = self.cycle + cycle + addressing.extra_cycle(self,memory,rom);
+    }
+    fn BIT(&mut self,cycle:usize,addressing:Addressing,memory: &memory::CpuRam, ppu: &ppu::Ppu,apu: &apu::Apu,rom: &rom::Rom){
+    	println!("BIT");
+    	self.pc = self.pc + addressing.bytes();
+		self.SetStatusByResult(self.registers[0] & addressing.read_value(&self,memory,ppu,apu,rom));
+		self.registers[4] = (self.registers[4] % 64) + ((addressing.read_value(&self,memory,ppu,apu,rom) >> 6) & 1) * 64;
+    	self.cycle = self.cycle + cycle;
+    }
+    fn ROL(&mut self,cycle:usize,addressing:Addressing,memory: &mut memory::CpuRam, ppu: &mut ppu::Ppu,apu: &mut apu::Apu,rom: &rom::Rom){
+    	println!("ROL");
+    	self.pc = self.pc + addressing.bytes();
+    	self.registers[4] = self.registers[4] | (addressing.read_value(&self,memory,ppu,apu,rom) >> 7);
+    	addressing.write_value(self,memory,ppu,apu,rom,(addressing.read_value(&self,memory,ppu,apu,rom) << 1) + (self.registers[4] & 1u8));
+    	self.SetStatusByResult(addressing.read_value(&self,memory,ppu,apu,rom));
+    	self.cycle = self.cycle + cycle;
+    }
 
 
     fn OPCODE(&mut self,cycle:usize,addressing:Addressing,memory: &memory::CpuRam, ppu: &ppu::Ppu,apu: &apu::Apu,rom: &rom::Rom){
